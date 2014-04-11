@@ -13,7 +13,8 @@ class Scene {
  public:
   void addObject(std::shared_ptr<Object3D> object);
   void addLightSource(const LightSource &light_source);
-  void render(const std::string &output_file_path, const Camera &camera, int width = 800);
+  void render(const std::string &output_file_path, const Camera &camera, int width = 800) const;
+  void test(const Ray &ray) const;
 
   friend class Material;
 

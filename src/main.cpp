@@ -1,4 +1,5 @@
 #include <cmath>
+#include <ctime>
 #include <iostream>
 
 #include "Camera.hpp"
@@ -52,6 +53,7 @@ void cornellBox(Scene *scene) {
   Material red(Vector3D(1.0, 0.1, 0.1), Vector3D(), Vector3D(999999999.0, 999999999.0, 999999999.0));
   Material white(Vector3D(1.0, 1.0, 1.0), Vector3D(), Vector3D(999999999.0, 999999999.0, 999999999.0));
   Material refl_m(Vector3D(0.1, 0.1, 0.1), Vector3D(0.8, 0.8, 0.8), Vector3D(999999999.0, 999999999.0, 999999999.0));
+  Material refr_m(Vector3D(0.1, 0.1, 0.1), Vector3D(0.8, 0.8, 0.8), Vector3D(1.01, 1.01, 1.01));
 
   auto reflective_sphere = std::shared_ptr<Object3D>(new Sphere(
       refl_m,
@@ -60,7 +62,7 @@ void cornellBox(Scene *scene) {
   scene->addObject(reflective_sphere);
   
   auto refractive_sphere = std::shared_ptr<Object3D>(new Sphere(
-      blue,
+      refr_m,
       Vector3D(0.0, 2.5, -2.5),
       1.5));
   scene->addObject(refractive_sphere);
@@ -141,11 +143,14 @@ void cornellBox(Scene *scene) {
 }
 
 int main() {
+  srand(time(NULL));
+
   Scene scene;
   cornellBox(&scene);
 
   Camera camera(Vector3D(13.0, 0.0, 0.0), Vector3D(-1.0, 0.0, 0.0), 0.34 * M_PI, 0.25 * M_PI);
   scene.render("default.ppm", camera);
+  //scene.test(Ray(Vector3D(5.0, 3.0, -2.5), Vector3D(-1.0, 0.0, 0.0)));
 
   return 0;
 }

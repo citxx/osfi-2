@@ -19,7 +19,9 @@ void Scene::addLightSource(const LightSource &light_source) {
   lights_.push_back(light_source);
 }
 
-void Scene::render(const std::string &output_file_path, const Camera &camera, int width) {
+void Scene::render(const std::string &output_file_path, const Camera &camera, int width) const {
+  int PW = 4, PH = 4;
+
   int height = camera.getHeight(width);
   std::ofstream output(output_file_path);
   output << "P3" << std::endl;
@@ -27,8 +29,14 @@ void Scene::render(const std::string &output_file_path, const Camera &camera, in
   output << "255" << std::endl;
   for (int j = 0; j < height; ++j) {
     for (int i = 0; i < width; ++i) {
-      Ray ray = camera.getDirection(1.0 * i / width, 1.0 * j / height);
-      Vector3D color = traceRay(ray);
+      Vector3D color;
+      for (int u = 0; u < PW; ++u) {
+        for (int v = 0; v < PH; ++v) {
+          Ray ray = camera.getDirection((i + 1.0 * u / PW) / width, (j + 1.0 * v / PH) / height);
+          color = color + traceRay(ray);
+        }
+      }
+      color = color / PW / PH;
       if (color.x < 0.0) color.x = 0.0; if (color.x > 1.0) color.x = 1.0;
       if (color.y < 0.0) color.y = 0.0; if (color.y > 1.0) color.y = 1.0;
       if (color.z < 0.0) color.z = 0.0; if (color.z > 1.0) color.z = 1.0;
@@ -39,6 +47,11 @@ void Scene::render(const std::string &output_file_path, const Camera &camera, in
     }
   }
   output.close();
+}
+
+void Scene::test(const Ray &ray) const {
+  std::cerr << "Test scene (" << ray.point << ", " << ray.direction << ")" << std::endl;
+  traceRay(ray);
 }
 
 bool Scene::castRay(
@@ -69,8 +82,10 @@ Vector3D Scene::traceRay(const Ray &ray) const {
   Vector3D k(1.0, 1.0, 1.0);
   Vector3D result;
 
-  while (k.len() > 0.1) {
+  while (k.len() > 0.001) {
+    //std::cerr << "Trace step (" << current_ray.point << ", " << current_ray.direction << ")" << std::endl;
     if (castRay(current_ray, &ip, &n, &m)) {
+      //std::cerr << "Hit(" << ip << ", " << n << ")" << std::endl;
       Vector3D color, nk;
       Ray nr;
       m.shade(*this, current_ray.direction, ip, n, &color, &nk, &nr);
