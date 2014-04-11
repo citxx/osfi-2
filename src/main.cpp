@@ -136,7 +136,7 @@ void cornellBox(Scene *scene) {
   scene->addObject(back_wall_tr_2);
 
   scene->addLightSource(LightSource(
-      Vector3D(0.0, 0.0, 3.5),
+      Vector3D(0.0, 0.0, 1.5),
       Vector3D(10.0, 10.0, 10.0)));
 }
 
