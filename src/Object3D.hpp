@@ -1,8 +1,9 @@
 #pragma once
 
-#include "Material.hpp"
 #include "Ray.hpp"
 #include "Vector3D.hpp"
+
+class Material;
 
 class Object3D {
  public:

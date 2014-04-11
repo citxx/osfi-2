@@ -6,6 +6,7 @@
 
 #include "Camera.hpp"
 #include "LightSource.hpp"
+#include "Material.hpp"
 #include "Object3D.hpp"
 
 class Scene {
@@ -13,6 +14,8 @@ class Scene {
   void addObject(std::shared_ptr<Object3D> object);
   void addLightSource(const LightSource &light_source);
   void render(const std::string &output_file_path, const Camera &camera, int width = 800);
+
+  friend class Material;
 
  private:
   bool castRay(

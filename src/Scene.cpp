@@ -65,18 +65,22 @@ bool Scene::castRay(
 Vector3D Scene::traceRay(const Ray &ray) const {
   Vector3D ip, n;
   Material m;
-  if (castRay(ray, &ip, &n, &m)) {
-    Vector3D color, hit;
-    for (auto ls : lights_) {
-      Vector3D dir = ls.position - ip;
-      bool hitted = castRay(Ray(ip, dir), &hit, nullptr, nullptr);
-      if (!hitted || Vector3D::dot(ip - hit, ls.position - hit) > EPS) {
-        Vector3D dc = ls.intensity * m.diffuse_color_ * std::max(0.0, Vector3D::dot(dir.normalized(), n.normalized()));
-        color = color + dc;
-      }
+  Ray current_ray = ray;
+  Vector3D k(1.0, 1.0, 1.0);
+  Vector3D result;
+
+  while (k.len() > 0.1) {
+    if (castRay(current_ray, &ip, &n, &m)) {
+      Vector3D color, nk;
+      Ray nr;
+      m.shade(*this, current_ray.direction, ip, n, &color, &nk, &nr);
+      result = result + k * color;
+      k = k * nk;
+      current_ray = nr;
+    } else {
+      k = Vector3D();
     }
-    return color;
-  } else {
-    return Vector3D();
   }
+
+  return result;
 }
