@@ -142,14 +142,19 @@ void cornellBox(Scene *scene) {
       Vector3D(10.0, 10.0, 10.0)));
 }
 
-int main() {
+int main(int argc, char *argv[]) {
   srand(time(NULL));
+
+  int pixel_grid_size = 4;
+  if (argc > 1) {
+    pixel_grid_size = std::stoi(argv[1]);
+  }
 
   Scene scene;
   cornellBox(&scene);
 
   Camera camera(Vector3D(13.0, 0.0, 0.0), Vector3D(-1.0, 0.0, 0.0), 0.34 * M_PI, 0.25 * M_PI);
-  scene.render("default.ppm", camera);
+  scene.render("default.ppm", camera, 800, pixel_grid_size);
   //scene.test(Ray(Vector3D(5.0, 3.0, -2.5), Vector3D(-1.0, 0.0, 0.0)));
 
   return 0;

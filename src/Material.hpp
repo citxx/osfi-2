@@ -27,6 +27,8 @@ class Material {
       Ray *ray) {
     *color = Vector3D();
 
+    Vector3D n = normal.normalized();
+
     // Diffuse
     Vector3D hit;
     double lights_number = 0.0;
@@ -35,7 +37,7 @@ class Material {
       bool hitted = scene.castRay(Ray(hit_point, dir), &hit, nullptr, nullptr);
       if (!hitted || Vector3D::dot(hit_point - hit, ls.position - hit) > EPS) {
         lights_number += 1.0;
-        Vector3D dc = ls.intensity / Vector3D::dot(ls.position - hit_point, ls.position - hit_point) * diffuse_ * std::max(0.0, Vector3D::dot(dir.normalized(), normal.normalized()));
+        Vector3D dc = ls.intensity / Vector3D::dot(ls.position - hit_point, ls.position - hit_point) * diffuse_ * std::max(0.0, Vector3D::dot(dir.normalized(), n));
         *color = *color + dc;
       }
     }
@@ -51,9 +53,34 @@ class Material {
 
     double dice = total_p * rand() / RAND_MAX;
     if (dice < diffuse_p) {  // Diffuse
-      // TODO: diffuse reflection
+      int PHI_N = 40, PSI_N = 10;
+      double D_PHI = 2.0 * PI / PHI_N, D_PSI = PI / 2.0 / PSI_N;
+      double dice_rest = dice;
+      Vector3D u = Vector3D(normal.y - normal.z, normal.z - normal.x, normal.x - normal.y).normalized();
+      Vector3D v = Vector3D::cross(n, u);
+      //std::cerr << normal << " " << u << " " << v << std::endl;
+      for (int i = 0; i < PHI_N; ++i) {
+        double phi = i * D_PHI;
+        for (int j = 0; j < PSI_N; ++j) {
+          double psi = j * D_PSI;
+          double sigma = D_PHI * D_PSI * cos(psi);
+          Vector3D diffuse_r =
+            sin(psi) * n +
+            cos(psi) * sin(phi) * u +
+            cos(psi) * cos(phi) * v;
+          double p = diffuse_p * Vector3D::dot(n, diffuse_r) / PI * sigma;
+          if (p < dice_rest) {
+            dice_rest -= p;
+          } else {  // The case
+            i = PHI_N;
+            j = PSI_N;
+            *k = diffuse_ * Vector3D::dot(n, diffuse_r);
+            *ray = Ray(hit_point, diffuse_r);
+            *color = *color * (total_p + lights_number) / (p + lights_number);
+          }
+        }
+      }
       *color = *color * (total_p + lights_number) / (diffuse_p + lights_number);
-      *k = Vector3D();
     } else if (dice < diffuse_p + reflection_p) {  // Reflection
       *k = refl_f * reflect_;
       Vector3D new_dir = reflectedDirection(direction, normal);
@@ -69,6 +96,7 @@ class Material {
 
  private:
   static constexpr double EPS = 1e-5;
+  static constexpr double PI = 3.14159265358979;
 
   Vector3D refractedDirection(
       const Vector3D &direction,

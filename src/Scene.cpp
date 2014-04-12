@@ -1,10 +1,12 @@
 #include <fstream>
+#include <future>
 #include <iostream>
 #include <memory>
 #include <string>
 #include <vector>
 
 #include "Camera.hpp"
+#include "Image.hpp"
 #include "Material.hpp"
 #include "Object3D.hpp"
 #include "Scene.hpp"
@@ -19,34 +21,40 @@ void Scene::addLightSource(const LightSource &light_source) {
   lights_.push_back(light_source);
 }
 
-void Scene::render(const std::string &output_file_path, const Camera &camera, int width) const {
-  int PW = 4, PH = 4;
+void Scene::render(
+    const std::string &output_file_path,
+    const Camera &camera,
+    int width,
+    int pixel_grid_size) const {
+  int PW, PH;
+  PW = PH = pixel_grid_size;
 
   int height = camera.getHeight(width);
-  std::ofstream output(output_file_path);
-  output << "P3" << std::endl;
-  output << width << " " << height << std::endl;
-  output << "255" << std::endl;
-  for (int j = 0; j < height; ++j) {
-    for (int i = 0; i < width; ++i) {
-      Vector3D color;
-      for (int u = 0; u < PW; ++u) {
-        for (int v = 0; v < PH; ++v) {
-          Ray ray = camera.getDirection((i + 1.0 * u / PW) / width, (j + 1.0 * v / PH) / height);
-          color = color + traceRay(ray);
+  Image img(width, height);
+  for (int u = 0; true; ++u) {
+    for (int v = 0; v < PH; ++v) {
+      double n = u * PH + v + 1;
+      std::cerr << "Rendering frame ";
+      #pragma omp parallel for 
+      for (int j = 0; j < height; ++j) {
+        for (int i = 0; i < width; ++i) {
+          Ray ray = camera.getDirection((i + 1.0 * (u % PW) / PW) / width, (j + 1.0 * v / PH) / height);
+          Vector3D color = traceRay(ray);
+          double r, g, b;
+          img.getPixel(i, j, &r, &g, &b);
+          img.setPixel(i, j,
+              r * (n - 1) / n + color.x / n,
+              g * (n - 1) / n + color.y / n,
+              b * (n - 1) / n + color.z / n);
         }
+        std::cerr << '.';
       }
-      color = color / PW / PH;
-      if (color.x < 0.0) color.x = 0.0; if (color.x > 1.0) color.x = 1.0;
-      if (color.y < 0.0) color.y = 0.0; if (color.y > 1.0) color.y = 1.0;
-      if (color.z < 0.0) color.z = 0.0; if (color.z > 1.0) color.z = 1.0;
-      int r = color.x * 255;
-      int g = color.y * 255;
-      int b = color.z * 255;
-      output << r << " " << g << " " << b << std::endl;
+      std::cerr << " done." << std::endl;
+      std::cerr << "Writing file ...";
+      img.savePPM(output_file_path);
+      std::cerr << " done." << std::endl;
     }
   }
-  output.close();
 }
 
 void Scene::test(const Ray &ray) const {
@@ -82,7 +90,7 @@ Vector3D Scene::traceRay(const Ray &ray) const {
   Vector3D k(1.0, 1.0, 1.0);
   Vector3D result;
 
-  while (k.len() > 0.001) {
+  while (k.len() > 0.05) {
     //std::cerr << "Trace step (" << current_ray.point << ", " << current_ray.direction << ")" << std::endl;
     if (castRay(current_ray, &ip, &n, &m)) {
       //std::cerr << "Hit(" << ip << ", " << n << ")" << std::endl;
