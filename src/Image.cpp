@@ -3,6 +3,7 @@
 #include <iostream>
 #include <fstream>
 
+#include "rgbe.h"
 #include "Image.hpp"
 
 Image::Image(int width, int height):
@@ -37,4 +38,12 @@ void Image::savePPM(const std::string &path) const {
   }
 
   file.close();
+}
+void Image::saveHDR(const std::string &path) const {
+  FILE *file = fopen(path.c_str(), "wb");
+
+  RGBE_WriteHeader(file, width_, height_, nullptr);
+  RGBE_WritePixels_RLE(file, const_cast<float*>(data_.data()), 3, width_, height_);
+
+  fclose(file);
 }

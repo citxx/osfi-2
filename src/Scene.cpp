@@ -17,7 +17,7 @@ void Scene::addObject(std::shared_ptr<Object3D> object) {
   objects_.push_back(object);
 }
 
-void Scene::addLightSource(const LightSource &light_source) {
+void Scene::addLightSource(std::shared_ptr<AbstractLightSource> light_source) {
   lights_.push_back(light_source);
 }
 
@@ -31,11 +31,11 @@ void Scene::render(
 
   int height = camera.getHeight(width);
   Image img(width, height);
-  for (int u = 0; true; ++u) {
+  for (int u = 0; ; ++u) {
     for (int v = 0; v < PH; ++v) {
-      double n = u * PH + v + 1;
+      int n = u * PH + v + 1;
       std::cerr << "Rendering frame ";
-      #pragma omp parallel for 
+      #pragma omp parallel for schedule(dynamic) 
       for (int j = 0; j < height; ++j) {
         for (int i = 0; i < width; ++i) {
           Ray ray = camera.getDirection((i + 1.0 * (u % PW) / PW) / width, (j + 1.0 * v / PH) / height);
@@ -50,9 +50,11 @@ void Scene::render(
         std::cerr << '.';
       }
       std::cerr << " done." << std::endl;
-      std::cerr << "Writing file ...";
-      img.savePPM(output_file_path);
-      std::cerr << " done." << std::endl;
+      //if (n % 5 == 1) {
+        std::cerr << "Writing file ...";
+        img.saveHDR(output_file_path);
+        std::cerr << " done." << std::endl;
+      //}
     }
   }
 }
@@ -66,16 +68,15 @@ bool Scene::castRay(
     const Ray &ray,
     Vector3D *intersection_point,
     Vector3D *normal,
-    Material *material) const {
+    std::shared_ptr<AbstractMaterial> *material) const {
   bool result = false;
   Vector3D _ip, _n;
-  Material m;
   for (auto obj : objects_) {
-    if (obj->rayIntersection(ray, &_ip, &_n)) {
+    if (obj->surface()->rayIntersection(ray, &_ip, &_n)) {
       if (!result || Vector3D::dot(_ip - *intersection_point, ray.direction) < 0.0) {
         *intersection_point = _ip;
         if (normal != nullptr) *normal = _n;
-        if (material != nullptr) *material = obj->material();
+        if (material != nullptr) *material = obj->material(_ip);
       }
       result = true;
     }
@@ -85,7 +86,7 @@ bool Scene::castRay(
 
 Vector3D Scene::traceRay(const Ray &ray) const {
   Vector3D ip, n;
-  Material m;
+  std::shared_ptr<AbstractMaterial> m;
   Ray current_ray = ray;
   Vector3D k(1.0, 1.0, 1.0);
   Vector3D result;
@@ -96,9 +97,10 @@ Vector3D Scene::traceRay(const Ray &ray) const {
       //std::cerr << "Hit(" << ip << ", " << n << ")" << std::endl;
       Vector3D color, nk;
       Ray nr;
-      m.shade(*this, current_ray.direction, ip, n, &color, &nk, &nr);
+      m->shade(*this, current_ray.direction, ip, n, &color, &nk, &nr);
       result = result + k * color;
       k = k * nk;
+      //std::cerr << result << " " << k << " " << color << std::endl;
       current_ray = nr;
     } else {
       k = Vector3D();

@@ -1,10 +1,11 @@
 #include <cmath>
 #include <ctime>
 #include <iostream>
+#include <memory>
 
 #include "Camera.hpp"
+#include "HomogeneousObject.hpp"
 #include "Material.hpp"
-#include "Plane.hpp"
 #include "Ray.hpp"
 #include "Scene.hpp"
 #include "Sphere.hpp"
@@ -49,97 +50,148 @@
 /*}*/
 
 void cornellBox(Scene *scene) {
-  Material blue(Vector3D(0.1, 0.1, 1.0), Vector3D(), Vector3D(999999999.0, 999999999.0, 999999999.0));
-  Material red(Vector3D(1.0, 0.1, 0.1), Vector3D(), Vector3D(999999999.0, 999999999.0, 999999999.0));
-  Material white(Vector3D(1.0, 1.0, 1.0), Vector3D(), Vector3D(999999999.0, 999999999.0, 999999999.0));
-  Material refl_m(Vector3D(0.1, 0.1, 0.1), Vector3D(0.8, 0.8, 0.8), Vector3D(999999999.0, 999999999.0, 999999999.0));
-  Material refr_m(Vector3D(0.1, 0.1, 0.1), Vector3D(0.8, 0.8, 0.8), Vector3D(1.01, 1.01, 1.01));
+  auto blue = std::shared_ptr<AbstractMaterial>(
+      new LambertSpecularMaterial(
+        Vector3D(0.1, 0.1, 1.0),
+        Vector3D(),
+        Vector3D(INFINITY, INFINITY, INFINITY)));
 
-  auto reflective_sphere = std::shared_ptr<Object3D>(new Sphere(
-      refl_m,
-      Vector3D(-2.5, -2.5, -2.5),
-      1.5));
+  auto red = std::shared_ptr<AbstractMaterial>(
+      new LambertSpecularMaterial(
+        Vector3D(1.0, 0.1, 0.1),
+        Vector3D(),
+        Vector3D(INFINITY, INFINITY, INFINITY)));
+
+  auto white = std::shared_ptr<AbstractMaterial>(
+      new LambertSpecularMaterial(
+        Vector3D(1.0, 1.0, 1.0),
+        Vector3D(),
+        Vector3D(INFINITY, INFINITY, INFINITY)));
+
+  auto refl_m = std::shared_ptr<AbstractMaterial>(
+      new LambertSpecularMaterial(
+        Vector3D(0.1, 0.1, 0.1),
+        Vector3D(0.8, 0.8, 0.8),
+        Vector3D(INFINITY, INFINITY, INFINITY)));
+  auto refr_m = std::shared_ptr<AbstractMaterial>(
+      new LambertSpecularMaterial(
+        Vector3D(0.01, 0.01, 0.01),
+        Vector3D(0.9, 0.9, 0.9),
+        Vector3D(2.6, 2.6, 2.6)));
+
+  auto reflective_sphere = std::shared_ptr<Object3D>(new HomogeneousObject(
+      std::shared_ptr<Surface>(new Sphere(
+          Vector3D(-2.5, -2.5, -2.5),
+          1.5)),
+      refl_m));
   scene->addObject(reflective_sphere);
-  
-  auto refractive_sphere = std::shared_ptr<Object3D>(new Sphere(
-      refr_m,
-      Vector3D(0.0, 2.5, -2.5),
-      1.5));
+
+  auto refractive_sphere = std::shared_ptr<Object3D>(new HomogeneousObject(
+      std::shared_ptr<Surface>(new Sphere(
+          Vector3D(0.0, 2.5, -2.5),
+          1.5)),
+      refr_m));
   scene->addObject(refractive_sphere);
-  
-  auto red_tr_1 = std::shared_ptr<Object3D>(new Triangle(
-      red,
-      Vector3D(5.0, -5.0, -4.0),
-      Vector3D(-5.0, -5.0, -4.0),
-      Vector3D(-5.0, -5.0, 4.0)));
+
+  auto red_tr_1 = std::shared_ptr<Object3D>(new HomogeneousObject(
+      std::shared_ptr<Surface>(new Triangle(
+          Vector3D(5.0, -5.0, -4.0),
+          Vector3D(-5.0, -5.0, -4.0),
+          Vector3D(-5.0, -5.0, 4.0))),
+      red));
   scene->addObject(red_tr_1);
 
-  auto red_tr_2 = std::shared_ptr<Object3D>(new Triangle(
-      red,
-      Vector3D(-5.0, -5.0, 4.0),
-      Vector3D(5.0, -5.0, 4.0),
-      Vector3D(5.0, -5.0, -4.0)));
+  auto red_tr_2 = std::shared_ptr<Object3D>(new HomogeneousObject(
+      std::shared_ptr<Surface>(new Triangle(
+          Vector3D(-5.0, -5.0, 4.0),
+          Vector3D(5.0, -5.0, 4.0),
+          Vector3D(5.0, -5.0, -4.0))),
+      red));
   scene->addObject(red_tr_2);
-  
-  auto blue_tr_1 = std::shared_ptr<Object3D>(new Triangle(
-      blue,
-      Vector3D(-5.0, 5.0, -4.0),
-      Vector3D(5.0, 5.0, -4.0),
-      Vector3D(-5.0, 5.0, 4.0)));
+
+  auto blue_tr_1 = std::shared_ptr<Object3D>(new HomogeneousObject(
+      std::shared_ptr<Surface>(new Triangle(
+          Vector3D(-5.0, 5.0, -4.0),
+          Vector3D(5.0, 5.0, -4.0),
+          Vector3D(-5.0, 5.0, 4.0))),
+      blue));
   scene->addObject(blue_tr_1);
 
-  auto blue_tr_2 = std::shared_ptr<Object3D>(new Triangle(
-      blue,
-      Vector3D(5.0, 5.0, 4.0),
-      Vector3D(-5.0, 5.0, 4.0),
-      Vector3D(5.0, 5.0, -4.0)));
+  auto blue_tr_2 = std::shared_ptr<Object3D>(new HomogeneousObject(
+      std::shared_ptr<Surface>(new Triangle(
+          Vector3D(5.0, 5.0, 4.0),
+          Vector3D(-5.0, 5.0, 4.0),
+          Vector3D(5.0, 5.0, -4.0))),
+      blue));
   scene->addObject(blue_tr_2);
 
-  auto ceiling_tr_1 = std::shared_ptr<Object3D>(new Triangle(
-      white,
-      Vector3D(5.0, -5.0, 4.0),
-      Vector3D(-5.0, -5.0, 4.0),
-      Vector3D(-5.0, 5.0, 4.0)));
+  auto ceiling_tr_1 = std::shared_ptr<Object3D>(new HomogeneousObject(
+      std::shared_ptr<Surface>(new Triangle(
+          Vector3D(5.0, -5.0, 4.0),
+          Vector3D(-5.0, -5.0, 4.0),
+          Vector3D(-5.0, 5.0, 4.0))),
+      white));
   scene->addObject(ceiling_tr_1);
 
-  auto ceiling_tr_2 = std::shared_ptr<Object3D>(new Triangle(
-      white,
-      Vector3D(5.0, -5.0, 4.0),
-      Vector3D(-5.0, 5.0, 4.0),
-      Vector3D(5.0, 5.0, 4.0)));
+  auto ceiling_tr_2 = std::shared_ptr<Object3D>(new HomogeneousObject(
+      std::shared_ptr<Surface>(new Triangle(
+          Vector3D(5.0, -5.0, 4.0),
+          Vector3D(-5.0, 5.0, 4.0),
+          Vector3D(5.0, 5.0, 4.0))),
+      white));
   scene->addObject(ceiling_tr_2);
 
-  auto floor_tr_1 = std::shared_ptr<Object3D>(new Triangle(
-      white,
-      Vector3D(-5.0, -5.0, -4.0),
-      Vector3D(5.0, -5.0, -4.0),
-      Vector3D(-5.0, 5.0, -4.0)));
+  auto floor_tr_1 = std::shared_ptr<Object3D>(new HomogeneousObject(
+      std::shared_ptr<Surface>(new Triangle(
+          Vector3D(-5.0, -5.0, -4.0),
+          Vector3D(5.0, -5.0, -4.0),
+          Vector3D(-5.0, 5.0, -4.0))),
+      white));
   scene->addObject(floor_tr_1);
 
-  auto floor_tr_2 = std::shared_ptr<Object3D>(new Triangle(
-      white,
-      Vector3D(-5.0, 5.0, -4.0),
-      Vector3D(5.0, -5.0, -4.0),
-      Vector3D(5.0, 5.0, -4.0)));
+  auto floor_tr_2 = std::shared_ptr<Object3D>(new HomogeneousObject(
+      std::shared_ptr<Surface>(new Triangle(
+          Vector3D(-5.0, 5.0, -4.0),
+          Vector3D(5.0, -5.0, -4.0),
+          Vector3D(5.0, 5.0, -4.0))),
+      white));
   scene->addObject(floor_tr_2);
 
-  auto back_wall_tr_1 = std::shared_ptr<Object3D>(new Triangle(
-      white,
-      Vector3D(-5.0, -5.0, -4.0),
-      Vector3D(-5.0, 5.0, -4.0),
-      Vector3D(-5.0, 5.0, 4.0)));
+  auto back_wall_tr_1 = std::shared_ptr<Object3D>(new HomogeneousObject(
+      std::shared_ptr<Surface>(new Triangle(
+          Vector3D(-5.0, -5.0, -4.0),
+          Vector3D(-5.0, 5.0, -4.0),
+          Vector3D(-5.0, 5.0, 4.0))),
+      white));
   scene->addObject(back_wall_tr_1);
 
-  auto back_wall_tr_2 = std::shared_ptr<Object3D>(new Triangle(
-      white,
-      Vector3D(-5.0, -5.0, -4.0),
-      Vector3D(-5.0, 5.0, 4.0),
-      Vector3D(-5.0, -5.0, 4.0)));
+  auto back_wall_tr_2 = std::shared_ptr<Object3D>(new HomogeneousObject(
+      std::shared_ptr<Surface>(new Triangle(
+          Vector3D(-5.0, -5.0, -4.0),
+          Vector3D(-5.0, 5.0, 4.0),
+          Vector3D(-5.0, -5.0, 4.0))),
+      white));
   scene->addObject(back_wall_tr_2);
 
-  scene->addLightSource(LightSource(
-      Vector3D(0.0, 0.0, 1.5),
-      Vector3D(10.0, 10.0, 10.0)));
+  Vector3D luminosity(8.0, 8.0, 8.0);
+  //auto lamp_surface = std::shared_ptr<Surface>(new Sphere(
+      //Vector3D(0.0, 0.0, 3.0),
+      //0.4));
+  auto lamp_surface = std::shared_ptr<Surface>(new Triangle(
+      Vector3D(1.0, 0.0, 3.99),
+      Vector3D(-2.0, -1.0, 3.99),
+      Vector3D(0, 1.0, 3.99)));
+  auto lamp = std::shared_ptr<AbstractLightSource>(new LambertLightSource(
+      lamp_surface,
+      luminosity));
+  scene->addLightSource(lamp);
+  
+  auto lamp_object = std::shared_ptr<Object3D>(new HomogeneousObject(
+      lamp_surface,
+      std::shared_ptr<AbstractMaterial>(new LightMaterial(luminosity))
+    )); 
+
+  scene->addObject(lamp_object);
 }
 
 int main(int argc, char *argv[]) {
@@ -154,7 +206,7 @@ int main(int argc, char *argv[]) {
   cornellBox(&scene);
 
   Camera camera(Vector3D(13.0, 0.0, 0.0), Vector3D(-1.0, 0.0, 0.0), 0.34 * M_PI, 0.25 * M_PI);
-  scene.render("default.ppm", camera, 800, pixel_grid_size);
+  scene.render("default.hdr", camera, 800, pixel_grid_size);
   //scene.test(Ray(Vector3D(5.0, 3.0, -2.5), Vector3D(-1.0, 0.0, 0.0)));
 
   return 0;

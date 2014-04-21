@@ -5,13 +5,51 @@
 #include <vector>
 #include <iostream>
 
+#include "defs.hpp"
 #include "Ray.hpp"
 #include "Scene.hpp"
+#include "Spectrum.hpp"
 #include "Vector3D.hpp"
 
-class Material {
+class AbstractMaterial {
  public:
-  explicit Material(
+  virtual void shade(
+      const Scene &scene,
+      const Vector3D &direction,
+      const Vector3D &hit_point,
+      const Vector3D &normal,
+      Vector3D *color,
+      Vector3D *k,
+      Ray *ray) const = 0;
+};
+
+class LightMaterial: public AbstractMaterial {
+ public:
+  LightMaterial(const Vector3D &luminocity): luminocity_(luminocity) {}
+
+  virtual void shade(
+      const Scene &scene,
+      const Vector3D &direction,
+      const Vector3D &hit_point,
+      const Vector3D &normal,
+      Vector3D *color,
+      Vector3D *k,
+      Ray *ray) const {
+    *color = luminocity_;
+    *k = Vector3D();
+  }
+
+ private:
+  Vector3D luminocity_;
+};
+
+// TODO: infinity literal
+class LambertSpecularMaterial: public AbstractMaterial {
+  // Light map, trace photon, trace ray, collect photons
+  // class T should be some sort of spectrums. We not need to
+  // know exactly frequencies.
+ public:
+  explicit LambertSpecularMaterial(
       const Vector3D &diffuse = Vector3D(),
       const Vector3D &reflect = Vector3D(),
       const Vector3D &snell = Vector3D()):
@@ -24,7 +62,7 @@ class Material {
       const Vector3D &normal,
       Vector3D *color,
       Vector3D *k,
-      Ray *ray) {
+      Ray *ray) const {
     *color = Vector3D();
 
     Vector3D n = normal.normalized();
@@ -32,18 +70,20 @@ class Material {
     // Diffuse
     Vector3D hit;
     double lights_number = 0.0;
-    for (auto ls : scene.lights_) {
-      Vector3D dir = ls.position - hit_point;
+    for (auto ls : scene.lights()) {
+      Vector3D position;
+      Vector3D intensity = ls->intensity(hit_point, &position);
+      Vector3D dir = position - hit_point;
       bool hitted = scene.castRay(Ray(hit_point, dir), &hit, nullptr, nullptr);
-      if (!hitted || Vector3D::dot(hit_point - hit, ls.position - hit) > EPS) {
+      if (!hitted || Vector3D::dot(hit_point - hit, position - hit) > -1e-3) {
         lights_number += 1.0;
-        Vector3D dc = ls.intensity / Vector3D::dot(ls.position - hit_point, ls.position - hit_point) * diffuse_ * std::max(0.0, Vector3D::dot(dir.normalized(), n));
+        Vector3D dc = intensity * diffuse_ * std::max(0.0, Vector3D::dot(dir.normalized(), n)); // TODO: check
         *color = *color + dc;
       }
     }
 
     // Ref**ction
-    double refl_f = reflectionF(direction, normal);
+    double refl_f = reflectionF(direction, normal, snell_[0]);
     double refr_f = 1.0 - refl_f;
 
     double reflection_p = Vector3D::dot(refl_f * reflect_, Vector3D(1.0, 1.0, 1.0)) / 3.0;
@@ -56,7 +96,7 @@ class Material {
       int PHI_N = 40, PSI_N = 10;
       double D_PHI = 2.0 * PI / PHI_N, D_PSI = PI / 2.0 / PSI_N;
       double dice_rest = dice;
-      Vector3D u = Vector3D(normal.y - normal.z, normal.z - normal.x, normal.x - normal.y).normalized();
+      Vector3D u = normal.orthogonal().normalized();
       Vector3D v = Vector3D::cross(n, u);
       //std::cerr << normal << " " << u << " " << v << std::endl;
       for (int i = 0; i < PHI_N; ++i) {
@@ -83,55 +123,31 @@ class Material {
       *color = *color * (total_p + lights_number) / (diffuse_p + lights_number);
     } else if (dice < diffuse_p + reflection_p) {  // Reflection
       *k = refl_f * reflect_;
-      Vector3D new_dir = reflectedDirection(direction, normal);
+      Vector3D new_dir = direction.reflect(normal);
       *ray = Ray(hit_point, new_dir);
       *color = *color * (total_p + lights_number) / (reflection_p + lights_number);
     } else {  // Refraction
       *k = refr_f * reflect_;
-      Vector3D new_dir = refractedDirection(direction, normal);
+      Vector3D new_dir = direction.refract(normal, snell_[0]);
       *ray = Ray(hit_point, new_dir);
       *color = *color * (total_p + lights_number) / (refraction_p + lights_number);
+      //std::cerr << *k << " " << *color << std::endl;
     }
   }
 
  private:
-  static constexpr double EPS = 1e-5;
-  static constexpr double PI = 3.14159265358979;
 
-  Vector3D refractedDirection(
+  static double reflectionF(
       const Vector3D &direction,
-      const Vector3D &normal) {
-    double n = snell_[0];
+      const Vector3D &normal,
+      double n) {
     if (Vector3D::dot(direction, normal) > 0) {
-      n = 1.0 / snell_[0];
+      n = 1.0 / n;
     }
 
-    double cos_s = fabs(Vector3D::dot(direction, normal) / direction.len() / normal.len());
-    Vector3D true_normal = - (Vector3D::dot(direction, normal) * normal).normalized();
-    Vector3D result = direction / n + (cos_s / n - sqrt(1 - (1 - cos_s * cos_s) / n / n)) * true_normal;
-    //std::cerr << "direction = " << direction << std::endl;
-    //std::cerr << "normal = " << normal << std::endl;
-    //std::cerr << "n = " << n << std::endl;
-    //std::cerr << "cos_s = " << cos_s << std::endl;
-    //std::cerr << "true_normal = " << true_normal << std::endl;
-    //std::cerr << "result = " << result << std::endl;
-    //std::cerr << std::endl;
-    return result;
-  }
-
-
-  Vector3D reflectedDirection(
-      const Vector3D &direction,
-      const Vector3D &normal) {
-    return direction - 2 * Vector3D::dot(direction, normal) / normal.len() / direction.len() * normal;
-  }
-
-  double reflectionF(
-      const Vector3D &direction,
-      const Vector3D &normal) {
-    double n = snell_[0];
-    if (Vector3D::dot(direction, normal) > 0) {
-      n = 1.0 / snell_[0];
+    // Unfortunately c++ doesn't able to compute limit (n -> inf)
+    if (n == INFINITY) {
+      n = 1e20;
     }
 
     double cos_s = fabs(Vector3D::dot(direction, normal) / direction.len() / normal.len());

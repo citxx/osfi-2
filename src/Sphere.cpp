@@ -1,14 +1,14 @@
 #include <cmath>
+#include <cstdlib>
 
+#include "defs.hpp"
 #include "Sphere.hpp"
 
 #define EPS 0.0001
 
 Sphere::Sphere(
-    const Material &material,
     const Vector3D &center,
     double radius):
-    material_(material),
     center_(center),
     radius_(radius) {}
 
@@ -42,7 +42,30 @@ bool Sphere::rayIntersection(
   }
 }
 
-Material Sphere::material() const {
-  return material_;
+void Sphere::randomPoint(
+    Vector3D *point,
+    Vector3D *normal) const {
+  double theta = 2 * PI * rand() / RAND_MAX;
+  double phi = 2 * asin(sqrt(1.0 * rand() / RAND_MAX));
+
+  Vector3D v(sin(phi) * cos(theta), sin(phi) * sin(theta), cos(phi));
+
+  *point = center_ + radius_ * v;
+  *normal = v;
 }
 
+Ray Sphere::randomRay(const Vector3D &from_point) const {
+  double sin_a = radius_ / (center_ - from_point).len();
+
+  double theta = 2 * PI * rand() / RAND_MAX;
+  double phi = asin(sqrt(sin_a * sin_a * rand() / RAND_MAX));
+
+  Vector3D dir = (center_ - from_point).normalized();
+
+  Vector3D u = dir.orthogonal().normalized();
+  Vector3D v = Vector3D::cross(dir, u);
+
+  return Ray(
+      from_point,
+      cos(phi) * dir + sin(phi) * cos(theta) * u + sin(phi) * sin(theta) * v);
+}

@@ -49,6 +49,30 @@ double Vector3D::operator [](int i) const {
   throw "Tried to get invalid component of Vector3D";
 }
 
+Vector3D Vector3D::refract(
+    const Vector3D &normal,
+    double n) const {
+  double cos_s = Vector3D::dot(*this, normal) / len() / normal.len();
+
+  if (cos_s > 0) {
+    n = 1.0 / n;
+  }
+
+  double abs_cos_s = fabs(cos_s);
+  Vector3D true_normal = - (cos_s * normal).normalized();
+  Vector3D result = *this / n + (abs_cos_s / n - sqrt(1 - (1 - abs_cos_s * abs_cos_s) / n / n)) * true_normal;
+  return result;
+}
+
+
+Vector3D Vector3D::reflect(const Vector3D &normal) const {
+  return *this - 2 * Vector3D::dot(*this, normal) / normal.len() / len() * normal;
+}
+
+Vector3D Vector3D::orthogonal() const {
+  return Vector3D(y - z, z - x, x - y);
+}
+
 bool operator ==(const Vector3D &a, const Vector3D &b) {
   return a.x == b.x && a.y == b.y && a.z == b.z;
 }

@@ -19,6 +19,9 @@ class Vector3D {
   Vector3D operator -() const;
   Vector3D operator +() const;
   double operator [](int i) const;
+  Vector3D reflect(const Vector3D &normal) const;
+  Vector3D refract(const Vector3D &normal, double n21) const;
+  Vector3D orthogonal() const;
 
   friend std::ostream & operator <<(std::ostream &stream, const Vector3D &t);
 };

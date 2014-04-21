@@ -1,14 +1,16 @@
 #pragma once
 
-#include "Ray.hpp"
+#include <memory>
+
+#include "Surface.hpp"
 #include "Vector3D.hpp"
 
-class Material;
+class AbstractMaterial;
 
 class Object3D {
  public:
   virtual ~Object3D() {}
 
-  virtual bool rayIntersection(const Ray &ray, Vector3D *intersectionPoint, Vector3D *normal) const = 0;
-  virtual Material material() const = 0;
+  virtual std::shared_ptr<Surface> surface() const = 0;
+  virtual std::shared_ptr<AbstractMaterial> material(const Vector3D &point) const = 0;
 };
