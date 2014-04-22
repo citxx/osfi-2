@@ -34,7 +34,7 @@ void Scene::render(
   for (int u = 0; ; ++u) {
     for (int v = 0; v < PH; ++v) {
       int n = u * PH + v + 1;
-      std::cerr << "Rendering frame ";
+      std::cerr << "Rendering frame " << n << " ";
       #pragma omp parallel for schedule(dynamic) 
       for (int j = 0; j < height; ++j) {
         for (int i = 0; i < width; ++i) {

@@ -73,18 +73,27 @@ class LambertSpecularMaterial: public AbstractMaterial {
     for (auto ls : scene.lights()) {
       Vector3D position;
       Vector3D intensity = ls->intensity(hit_point, &position);
+      if (std::isnan(intensity.x) || std::isnan(intensity.y) || std::isnan(intensity.z)) {
+        std::cerr << "Intensity is " << intensity << std::endl;
+      }
       Vector3D dir = position - hit_point;
       bool hitted = scene.castRay(Ray(hit_point, dir), &hit, nullptr, nullptr);
-      if (!hitted || Vector3D::dot(hit_point - hit, position - hit) > -1e-3) {
+      if (!hitted || Vector3D::dot(hit_point - hit, position - hit) > -1e-6) {
         lights_number += 1.0;
         Vector3D dc = intensity * diffuse_ * std::max(0.0, Vector3D::dot(dir.normalized(), n)); // TODO: check
         *color = *color + dc;
       }
     }
 
+    if (std::isnan(color->x) || std::isnan(color->y) || std::isnan(color->z)) {
+      std::cerr << "Diffuse color is " << *color << std::endl;
+    }
+
     // Ref**ction
     double refl_f = reflectionF(direction, normal, snell_[0]);
     double refr_f = 1.0 - refl_f;
+
+    if (std::isnan(refl_f)) std::cerr << "refl_f is NaN" << std::endl;
 
     double reflection_p = Vector3D::dot(refl_f * reflect_, Vector3D(1.0, 1.0, 1.0)) / 3.0;
     double refraction_p = Vector3D::dot(refr_f * reflect_, Vector3D(1.0, 1.0, 1.0)) / 3.0;

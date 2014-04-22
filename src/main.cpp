@@ -178,9 +178,10 @@ void cornellBox(Scene *scene) {
       //Vector3D(0.0, 0.0, 3.0),
       //0.4));
   auto lamp_surface = std::shared_ptr<Surface>(new Triangle(
-      Vector3D(1.0, 0.0, 3.99),
-      Vector3D(-2.0, -1.0, 3.99),
-      Vector3D(0, 1.0, 3.99)));
+      Vector3D(0.0, 1.0, 3.99),
+      Vector3D(-3.0, 0.0, 3.99),
+      Vector3D(-1.0, 2.0, 3.99)));
+
   auto lamp = std::shared_ptr<AbstractLightSource>(new LambertLightSource(
       lamp_surface,
       luminosity));
@@ -192,6 +193,24 @@ void cornellBox(Scene *scene) {
     )); 
 
   scene->addObject(lamp_object);
+
+  Vector3D luminosity2(4.5, 4.3, 2.0);
+  auto lamp2_surface = std::shared_ptr<Surface>(new Triangle(
+      Vector3D(0.0, -4.99, 2.0),
+      Vector3D(1.3, -4.99, 0.0),
+      Vector3D(1.7, -4.99, 1.0)));
+  
+  auto lamp2 = std::shared_ptr<AbstractLightSource>(new LambertLightSource(
+      lamp2_surface,
+      luminosity2));
+  scene->addLightSource(lamp2);
+  
+  auto lamp2_object = std::shared_ptr<Object3D>(new HomogeneousObject(
+      lamp2_surface,
+      std::shared_ptr<AbstractMaterial>(new LightMaterial(luminosity2))
+    )); 
+
+  scene->addObject(lamp2_object);
 }
 
 int main(int argc, char *argv[]) {

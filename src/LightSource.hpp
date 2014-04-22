@@ -49,10 +49,14 @@ class LambertLightSource: public AbstractLightSource {
       Vector3D *light_point) const {
     Ray r = surface_->randomRay(from_point);
     Vector3D n;
-    surface_->rayIntersection(r, light_point, &n);
+    if (!surface_->rayIntersection(r, light_point, &n)) {
+      return Vector3D();
+    }
     Vector3D v = *light_point - from_point;
     auto result =  luminosity_ / Vector3D::dot(v, v) * std::abs(Vector3D::dot(-v.normalized(), n.normalized()));
-    //std::cerr << from_point << " " << *light_point << " " << result << std::endl;
+    if (std::isnan(result.x) || std::isnan(result.y) || std::isnan(result.z)) {
+      std::cerr << "NaN: " << from_point << " " << *light_point << " " << result << " " << r.point << " " << r.direction << " " << n << " " << v << " " << luminosity_ << std::endl;
+    }
     return result;
   }
 

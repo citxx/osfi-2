@@ -3,6 +3,7 @@
 
 #include "Vector3D.hpp"
 
+#define EPS 1e-6
 
 Vector3D::Vector3D(double x, double y, double z):
     x(x), y(y), z(z) {}
@@ -70,7 +71,11 @@ Vector3D Vector3D::reflect(const Vector3D &normal) const {
 }
 
 Vector3D Vector3D::orthogonal() const {
-  return Vector3D(y - z, z - x, x - y);
+  if (std::abs(x - y) < EPS && std::abs(y - z) < EPS) {
+    return Vector3D(-2 * x, y, z);
+  } else {
+    return Vector3D(y - z, z - x, x - y);
+  }
 }
 
 bool operator ==(const Vector3D &a, const Vector3D &b) {
