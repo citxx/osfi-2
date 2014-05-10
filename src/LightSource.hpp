@@ -2,7 +2,6 @@
 
 #include <memory>
 
-#include "Material.hpp"
 #include "Object3D.hpp"
 #include "HomogeneousObject.hpp"
 #include "Photon.hpp"
@@ -18,6 +17,8 @@ class AbstractLightSource {
   virtual Vector3D intensity(
       const Vector3D &from_point,
       Vector3D *light_point) const = 0;
+
+  virtual double density(const Vector3D &from_point) const = 0;
 };
 
 class PointLightSource: public AbstractLightSource {
@@ -31,6 +32,10 @@ class PointLightSource: public AbstractLightSource {
       Vector3D *light_point) const {
     *light_point = position_;
     return intensity_ / Vector3D::dot(position_ - from_point, position_ - from_point);
+  }
+
+  virtual double density(const Vector3D &from_point) const {
+    return 1.0;
   }
 
  private:
@@ -49,6 +54,7 @@ class LambertLightSource: public AbstractLightSource {
       Vector3D *light_point) const {
     Ray r = surface_->randomRay(from_point);
     Vector3D n;
+
     if (!surface_->rayIntersection(r, light_point, &n)) {
       return Vector3D();
     }
@@ -58,6 +64,10 @@ class LambertLightSource: public AbstractLightSource {
       std::cerr << "NaN: " << from_point << " " << *light_point << " " << result << " " << r.point << " " << r.direction << " " << n << " " << v << " " << luminosity_ << std::endl;
     }
     return result;
+  }
+
+  virtual double density(const Vector3D &from_point) const {
+    return 1.0 / surface_->angle(from_point);
   }
 
  private:

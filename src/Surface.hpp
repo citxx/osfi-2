@@ -19,5 +19,7 @@ class Surface {
 
   virtual Ray randomRay(const Vector3D &from_point) const = 0;
 
+  virtual double angle(const Vector3D &from_point) const = 0;
+
   //virtual void storePhoton(int cell, double power) = 0;
 };

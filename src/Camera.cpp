@@ -2,7 +2,6 @@
 #include <iostream>
 
 #include "Camera.hpp"
-#include "Material.hpp"
 #include "Ray.hpp"
 #include "Vector3D.hpp"
 

@@ -6,15 +6,19 @@
 
 #include "Camera.hpp"
 #include "LightSource.hpp"
-#include "Material.hpp"
+#include "AbstractMaterial.hpp"
 #include "Object3D.hpp"
 
 class AbstractMaterial;
 
 class Scene {
  public:
+  enum class ObjectType {Plain, Light};
+
   void addObject(std::shared_ptr<Object3D> object);
-  void addLightSource(std::shared_ptr<AbstractLightSource> light_source);
+  void addLightSource(
+      std::shared_ptr<AbstractLightSource> light_source,
+      std::shared_ptr<Object3D> light_object);
   void render(
       const std::string &output_file_path,
       const Camera &camera,
@@ -28,11 +32,13 @@ class Scene {
       const Ray &ray,
       Vector3D *intersection_point,
       Vector3D *normal,
-      std::shared_ptr<AbstractMaterial> *material) const;
+      std::shared_ptr<AbstractMaterial> *material,
+      ObjectType *type = nullptr) const;
 
  private:
   Vector3D traceRay(const Ray &ray) const;
 
   std::vector<std::shared_ptr<Object3D>> objects_;
   std::vector<std::shared_ptr<AbstractLightSource>> lights_;
+  std::vector<ObjectType> object_types_;
 };

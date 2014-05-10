@@ -1,7 +1,9 @@
+#include <cmath>
+
 #include "defs.hpp"
 #include "Triangle.hpp"
 
-#define EPS 0.0001
+#define EPS 1e-5
 
 Triangle::Triangle(
     const Vector3D &v1,
@@ -64,4 +66,33 @@ Ray Triangle::randomRay(const Vector3D &from_point) const {
 
   Vector3D point = x * v1_ + y * v2_ + (1 - x - y) * v3_;
   return Ray(from_point, (point - from_point).normalized());
+}
+
+double Triangle::angle(const Vector3D &from_point) const {
+  Vector3D v1 = (v1_ - from_point).normalized();
+  Vector3D v2 = (v2_ - from_point).normalized();
+  Vector3D v3 = (v3_ - from_point).normalized();
+
+  Vector3D n12 = Vector3D::cross(v1, v2);
+  Vector3D n23 = Vector3D::cross(v2, v3);
+  Vector3D n31 = Vector3D::cross(v3, v1);
+
+  Vector3D u12 = Vector3D::cross(n12, v1).normalized();
+  Vector3D u21 = Vector3D::cross(v2, n12).normalized();
+  Vector3D u23 = Vector3D::cross(n23, v2).normalized();
+  Vector3D u32 = Vector3D::cross(v3, n23).normalized();
+  Vector3D u31 = Vector3D::cross(n31, v3).normalized();
+  Vector3D u13 = Vector3D::cross(v1, n31).normalized();
+
+  double cos1 = Vector3D::dot(u12, u13);
+  double cos2 = Vector3D::dot(u21, u23);
+  double cos3 = Vector3D::dot(u31, u32);
+
+  double result = acos(cos1) + acos(cos2) + acos(cos3) - PI;
+  //std::cerr << result << std::endl;
+  //std::cerr << v1 << " " << v2 << " " << v3 << std::endl;
+  //std::cerr << u12 << " " << u13 << std::endl;
+  //std::cerr << u21 << " " << u23 << std::endl;
+  //std::cerr << u31 << " " << u32 << std::endl;
+  return result;
 }

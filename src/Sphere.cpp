@@ -69,3 +69,11 @@ Ray Sphere::randomRay(const Vector3D &from_point) const {
       from_point,
       cos(phi) * dir + sin(phi) * cos(theta) * u + sin(phi) * sin(theta) * v);
 }
+
+double Sphere::angle(const Vector3D &from_point) const {
+  double sin_a = radius_ / (center_ - from_point).len();
+  double cos_a = sqrt(1 - sin_a * sin_a);
+  double r = cos_a * radius_;
+
+  return r * r * PI / ((center_ - from_point).len() - sin_a * radius_);
+}

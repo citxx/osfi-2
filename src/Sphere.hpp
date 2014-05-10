@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Material.hpp"
 #include "Surface.hpp"
 #include "Vector3D.hpp"
 
@@ -20,6 +19,8 @@ class Sphere: public Surface {
       Vector3D *normal) const;
 
   virtual Ray randomRay(const Vector3D &from_point) const;
+
+  virtual double angle(const Vector3D &from_point) const;
 
  private:
   Vector3D center_;

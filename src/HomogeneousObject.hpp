@@ -1,9 +1,7 @@
 #pragma once
 
-#include "Material.hpp"
+#include "AbstractMaterial.hpp"
 #include "Object3D.hpp"
-
-class Material;
 
 class HomogeneousObject: public Object3D {
  public:
