@@ -7,3 +7,4 @@ Second task on Basics of Photorealistic Image Synthesis course. Stochastic ray-t
 * Indirect illumination
 * Lambert, Phong, Specular, Anisotropic and Microfacet materials
 * Lambert light sources
+* Rendering to HDR image
