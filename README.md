@@ -1,4 +1,8 @@
 osfi-2
 ======
 
-Secon task on Basics of Photorealistic Image Synthesis course
+Second task on Basics of Photorealistic Image Synthesis course. Stochastic ray-tracing algorithm implementation with following features:
+
+* Progressive rendering
+* Indirect illumination
+* Lambert, Phong, Specular, Anisotropic, Microfacet and Combined materials
